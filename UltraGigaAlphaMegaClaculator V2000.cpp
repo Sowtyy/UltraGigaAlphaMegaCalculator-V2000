@@ -1,14 +1,14 @@
-#include "header.h"
-#include "text.cpp"
+#include "Header.h"
+#include "Constants.cpp"
 
 
 class App
 {
 public:
-	const std::string version = "1.0.0";
-	const std::string date = "23.05.2023 @ 1 pm";
-	
-	const std::string name = "UltraGigaAlphaMegaCalculator V2000  Sowtyy's rewrite";
+	const std::string version = "1.0.1";
+	const std::string date = "24.05.2023 @ 12 am";
+
+	const std::string name = "UltraGigaAlphaMegaCalculator V2000   Sowtyy's rewrite";
 
 	const std::string name_and_version = name + " " + version;
 
@@ -16,8 +16,6 @@ public:
 
 	std::string lang;
 	std::string mode;
-	int result = 0;
-	std::vector<int> numbers;
 
 
 	App(std::string lang)
@@ -47,7 +45,7 @@ bool checkStrDigit(std::string str)
 	for (const char chr : str)
 		if (!isdigit(chr))
 			return false;
-	
+
 	return true;
 }
 
@@ -98,7 +96,7 @@ T askInput(std::string text = "")
 
 	std::cout << text;
 	std::cin >> inp;
-	
+
 	return inp;
 }
 
@@ -111,7 +109,7 @@ void askInputLang()
 	do
 		inp = askInput(getTextMap("choose_lang") + allowedOptsStr + " ");
 	while (!checkVecElemExists(inp, LANGVEC));
-	
+
 	app.lang = inp;
 }
 
@@ -128,7 +126,7 @@ void askInputMode()
 	app.mode = inp;
 }
 
-void askInputNums()
+void askInputNums(std::vector<int>& inpNumbers)
 {
 	std::string inp;
 
@@ -138,17 +136,15 @@ void askInputNums()
 			inp = askInput(getTextMap("enter_num") + std::to_string(i + 1) + ": ");
 		while (!checkStrDigit(inp));
 
-		app.numbers.push_back(std::stoi(inp));
+		inpNumbers.push_back(std::stoi(inp));
 	}
 }
 
-void processNums()
+void processNums(std::vector<int>& inpNumbers, int& result)
 {
-	std::vector<int>& numbers = app.numbers;
 	std::string& mode = app.mode;
-	int& result = app.result;
 
-	const int numbersSize = numbers.size();
+	const int numbersSize = inpNumbers.size();
 
 	for (int i = 0; i < numbersSize; i++)
 	{
@@ -157,14 +153,17 @@ void processNums()
 		if (iPlus >= numbersSize)
 			continue;
 
+		int& number1 = inpNumbers[i];
+		int& number2 = inpNumbers[iPlus];
+
 		if (mode == "+")
-			result = numbers[i] + numbers[iPlus];
+			result = number1 + number2;
 		else if (mode == "-")
-			result = numbers[i] - numbers[iPlus];
+			result = number1 - number2;
 		else if (mode == "*")
-			result = numbers[i] * numbers[iPlus];
+			result = number1 * number2;
 		else if (mode == "/")
-			result = numbers[i] / numbers[iPlus];
+			result = number1 / number2;
 	}
 }
 
@@ -174,19 +173,23 @@ int main()
 	SetConsoleTitle(strConv(app.name_and_version).c_str());
 
 	askInputLang();
-	setlocale(LC_ALL, ".UTF8");
-	
+	setlocale(LC_ALL, app.lang.c_str());
+
 	printTextMap("welcome");
-	printTextMap("welcome_note");
+	//printTextMap("welcome_note");
+
+	int result = 0;
+	std::vector<int> inpNumbers;
+
 
 	while (app.run)
 	{
 		askInputMode();
-		askInputNums();
+		askInputNums(inpNumbers);
 
-		processNums();
+		processNums(inpNumbers, result);
 
-		printTextMap("result", std::to_string(app.result));
+		printTextMap("result", std::to_string(result));
 		printTextMap("to_exit");
 
 
