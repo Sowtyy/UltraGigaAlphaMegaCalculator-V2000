@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdio>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -8,3 +7,4 @@
 #include <locale.h>
 #include <Windows.h>
 #include <codecvt>
+#include <cctype>

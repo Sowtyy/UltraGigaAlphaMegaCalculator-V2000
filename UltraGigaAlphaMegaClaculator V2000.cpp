@@ -5,8 +5,8 @@
 class App
 {
 public:
-	const std::string version = "1.0.1";
-	const std::string date = "24.05.2023 @ 12 am";
+	const std::string version = "1.1.0";
+	const std::string date = "25.05.2023 @ 2 pm";
 
 	const std::string name = "UltraGigaAlphaMegaCalculator V2000   Sowtyy's rewrite";
 
@@ -37,7 +37,17 @@ std::wstring strConv(const std::string& string)
 	return converter.from_bytes(string);
 }
 
-bool checkStrDigit(std::string str)
+std::string strToLower(const std::string& str)
+{
+	std::string strLower;
+
+	for (const char& chr : str)
+		strLower += tolower(chr);
+
+	return strLower;
+}
+
+bool checkStrDigit(const std::string& str)
 {
 	if (str.size() < 1)
 		return false;
@@ -50,7 +60,7 @@ bool checkStrDigit(std::string str)
 }
 
 template <typename T>
-bool checkVecElemExists(T elem, std::vector<T> vec)
+bool checkVecElemExists(const T& elem, const std::vector<T>& vec)
 {
 	for (const T& vecElem : vec)
 	{
@@ -61,13 +71,24 @@ bool checkVecElemExists(T elem, std::vector<T> vec)
 	return false;
 }
 
-std::string getTextMap(std::string key)
+template<typename T>
+std::vector<std::string> optsToStrNums(const std::vector<T>& optsVec)
 {
-	std::string text = TEXTMAP.at(key).at(app.lang);
-	return text;
+	std::vector<std::string> strNums;
+
+	for (unsigned int i = 0; i < optsVec.size(); i++)
+		strNums.push_back(std::to_string(i + 1));
+	
+	return strNums;
 }
 
-std::string buildOptionsStr(std::vector<std::string> optionsVec, std::string delimiter = ", ")
+template<typename T>
+T strNumToOpt(const std::string& strNum, const std::vector<T>& optsVec)
+{
+	return optsVec[std::stoi(strNum) - 1];
+}
+
+std::string buildOptionsStr(const std::vector<std::string>& optionsVec, const std::string& delimiter = ", ")
 {
 	const int optionsVecSize = optionsVec.size();
 	std::string optionsStr = "[";
@@ -84,18 +105,25 @@ std::string buildOptionsStr(std::vector<std::string> optionsVec, std::string del
 	return optionsStr;
 }
 
-void printTextMap(std::string key, std::string addText = "")
+std::string getTextMap(const std::string& key)
+{
+	std::string text = TEXTMAP.at(key).at(app.lang);
+	return text;
+}
+
+void printTextMap(const std::string& key, const std::string& addText = "")
 {
 	std::cout << getTextMap(key) << addText;
 }
 
-template <typename T = std::string>
-T askInput(std::string text = "")
+
+std::string askInput(const std::string& text = "")
 {
-	T inp{};
+	std::string inp;
 
 	std::cout << text;
-	std::cin >> inp;
+	//std::cin >> inp;
+	std::getline(std::cin, inp);
 
 	return inp;
 }
@@ -107,30 +135,34 @@ void askInputLang()
 	std::string inp;
 
 	do
-		inp = askInput(getTextMap("choose_lang") + allowedOptsStr + " ");
+		inp = strToLower(askInput(getTextMap("choose_lang") + allowedOptsStr + " "));
 	while (!checkVecElemExists(inp, LANGVEC));
 
 	app.lang = inp;
+	setlocale(LC_ALL, inp.c_str());
 }
 
 void askInputMode()
 {
-	const std::string allowedOptsStr = buildOptionsStr(MODEVEC);
+	const std::vector<std::string> newOpts = optsToStrNums(MODEVEC);
+	const std::string allowedOptsStr = buildOptionsStr(newOpts);
 
 	std::string inp;
 
 	do
 		inp = askInput(getTextMap("choose_mode") + allowedOptsStr + " ");
-	while (!checkVecElemExists(inp, MODEVEC));
+	while (!checkVecElemExists(inp, newOpts));
 
-	app.mode = inp;
+	std::string opt = strNumToOpt(inp, MODEVEC);
+
+	app.mode = opt;
 }
 
 void askInputNums(std::vector<int>& inpNumbers)
 {
 	std::string inp;
 
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < MAXINPNUMS; i++)
 	{
 		do
 			inp = askInput(getTextMap("enter_num") + std::to_string(i + 1) + ": ");
@@ -140,11 +172,22 @@ void askInputNums(std::vector<int>& inpNumbers)
 	}
 }
 
-void processNums(std::vector<int>& inpNumbers, int& result)
+void askInputExit(std::string& inp)
+{
+	std::string newInp;
+
+	do
+		newInp = strToLower(askInput(getTextMap("to_exit")));
+	while (!checkVecElemExists(newInp, EXITOPTVEC));
+
+	inp = newInp;
+}
+
+void processNums(std::vector<int>& numbers, int& result)
 {
 	std::string& mode = app.mode;
 
-	const int numbersSize = inpNumbers.size();
+	const int numbersSize = numbers.size();
 
 	for (int i = 0; i < numbersSize; i++)
 	{
@@ -153,8 +196,8 @@ void processNums(std::vector<int>& inpNumbers, int& result)
 		if (iPlus >= numbersSize)
 			continue;
 
-		int& number1 = inpNumbers[i];
-		int& number2 = inpNumbers[iPlus];
+		int& number1 = numbers[i];
+		int& number2 = numbers[iPlus];
 
 		if (mode == "+")
 			result = number1 + number2;
@@ -167,13 +210,20 @@ void processNums(std::vector<int>& inpNumbers, int& result)
 	}
 }
 
+void processMainInput(const std::string& inp)
+{
+	if (inp == "l")
+		askInputLang();
+	else if (inp == "q")
+		app.run = false;
+}
+
 
 int main()
 {
 	SetConsoleTitle(strConv(app.name_and_version).c_str());
 
 	askInputLang();
-	setlocale(LC_ALL, app.lang.c_str());
 
 	printTextMap("welcome");
 	//printTextMap("welcome_note");
@@ -181,6 +231,7 @@ int main()
 	int result = 0;
 	std::vector<int> inpNumbers;
 
+	std::string mainInp;
 
 	while (app.run)
 	{
@@ -188,13 +239,11 @@ int main()
 		askInputNums(inpNumbers);
 
 		processNums(inpNumbers, result);
-
+		
 		printTextMap("result", std::to_string(result));
-		printTextMap("to_exit");
-
-
-		std::cin.ignore();
-		std::cin.get();
+		
+		askInputExit(mainInp);
+		processMainInput(mainInp);
 
 		std::cout << "----------\n\n";
 	}
